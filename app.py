@@ -2,6 +2,7 @@ import bson.json_util
 import mongo_util
 import os
 import logging
+import re
 from models import User
 from pymongo import MongoClient
 from flask import Flask, request, redirect, url_for, abort
@@ -11,6 +12,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
+app.config.update(dict(
+  PREFERRED_URL_SCHEME = 'https'
+))
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.logger.setLevel(logging.INFO)
@@ -27,12 +31,21 @@ def user_loader(user_id):
         app.logger.info(new_user)
         return new_user
 
+@login_manager.unauthorized_handler
+def unauthorized_handler():
+    return redirect(url_for('forbidden', _scheme='https', _external=True))
+
 @app.route('/')
 @login_required
 def hello():
     return app.send_static_file('index.html')
 
+@app.route('/401')
+def forbidden():
+    return app.send_static_file('index.html')
+
 @app.route('/getUserStats')
+@login_required
 def get_user_stats():
     logged_in_user = mongo_util.get_user(current_user)
     app.logger.info(logged_in_user)
@@ -41,6 +54,18 @@ def get_user_stats():
     else:
         return bson.json_util.dumps({'error': 'Could not find logged in user'}), 500
 
+@app.route('/setUserStats')
+@login_required
+def set_user_stats():
+    running = request.args.get('running', 0.0)
+    biking = request.args.get('biking', 0.0)
+    swimming = request.args.get('swimming', 0.0)
+    percent_complete = mongo_util.set_user_stats(current_user.username, running, biking, swimming)
+    if percent_complete >= 0:
+        return bson.json_util.dumps({'running': running, 'biking': biking, 'swimming': swimming, 'percent_complete': percent_complete})
+    else:
+        return bson.json_util.dumps({'error': 'Could not update stats'}), 500
+
 @app.route('/updateUserStats')
 @login_required
 def update_user_stats():
@@ -48,9 +73,8 @@ def update_user_stats():
     bike = request.args.get('biking', 0.0)
     swim = request.args.get('swimming', 0.0)
     try:
-        result = mongo_util.update_user_stats(current_user, running=run, biking=bike, swimming=swim)
-        app.logger.info(result)
-        return bson.json_util.dumps({'result': True})
+        running, biking, swimming, percent_complete = mongo_util.update_user_stats(current_user, running=run, biking=bike, swimming=swim)
+        return bson.json_util.dumps({'swimming': swimming, 'running': running, 'biking': biking, 'percent_complete': percent_complete})
     except Exception as e:
         return bson.json_util.dumps({'error': str(e)}), 400
 
@@ -91,7 +115,8 @@ def do_login():
                 return bson.json_util.dumps({'status': 200, 'response': 'Bad request'})
 
             # Verify credentials
-            user = db.users.find_one({'username': username})
+            regx_search = re.compile(username, re.IGNORECASE)
+            user = db.users.find_one({'username': regx_search})
             app.logger.info(user)
             if user:
                 # User already exists so log them in
@@ -99,11 +124,11 @@ def do_login():
                 if check_password_hash(user['password'], password):
                     app.logger.info("New user: %s" % str(new_user))
                     if not login_user(new_user):
-                        return bson.json_util.dumps({'status': 200, 'response': 'Login failed'}), 200
+                        return bson.json_util.dumps({'status': 400, 'response': 'Login failed'}), 400
                     app.logger.info("New user: %s" % str(new_user))
                     return bson.json_util.dumps({'status': 200, 'response': 'Successfully logged in'}), 200
                 else:
-                    return bson.json_util.dumps({'status': 200, 'response': 'Incorrect username or password'}), 200
+                    return bson.json_util.dumps({'status': 400, 'response': 'Incorrect username or password'}), 400
             else:
                 # A new user should be created
                 password = generate_password_hash(password)
@@ -114,7 +139,9 @@ def do_login():
                     new_user.authenticated = True
                     login_user(new_user)
                     app.logger.info('Changing to profile page')
-                    return redirect('/view1')
+                    return bson.json_util.dumps({'status': 200, 'response': 'Successfully created a new account'})
+                else:
+                    return bson.json_util.dumps({'status': 200, 'response': 'Could not create new account'}), 400
 
 
 @app.route('/<path:the_path>')

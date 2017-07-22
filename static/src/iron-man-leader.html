@@ -1,20 +1,10 @@
-<!--
-@license
-Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
-
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html" />
 <link rel="import" href="../bower_components/iron-list/iron-list.html" />
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html" />
 <link rel="import" href="shared-styles.html">
 
-<dom-module id="my-view3">
+<dom-module id="iron-man-leader">
   <template>
     <style include="shared-styles">
       :host {
@@ -94,7 +84,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       }
     </style>
-
+    <app-route
+        route="{{route}}"
+        pattern="/:page"
+        data="{{routeData}}"
+        tail="{{subroute}}"></app-route>
     <div class="card">
       <h1>Leader board</h1>
       <div class="header">
@@ -117,7 +111,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <div class="cell-small">[[user.running]]</div>
             <div class="cell-small">[[user.swimming]]</div>
             <div class="cell-small">[[user.biking]]</div>
-            <div class="cell-medium">[[_format(user.percent_complete)]]</div>
+            <div class="cell-medium">[[_format(user.percent_complete)]]%</div>
           </div>
         </div>
       </template>
@@ -137,21 +131,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <script>
     Polymer({
-      is: 'my-view3',
+      is: 'iron-man-leader',
       properties: {
         users: {
           type: Array,
           value: []
         }
       },
+
+      observers: [
+        '_routePageChanged(routeData.page)'
+      ],
+
       _format: function(num)
       {
         return num.toFixed(2);
       },
+
+      _routePageChanged: function(page) {
+        if(page == 'leader') {
+          this.$.spinny.active = true;
+          this.$.leaderBoard.generateRequest();
+        }
+      },
+
       _add_one: function(i)
       {
         return i + 1;
       },
+
       handleGetLeaderBoard: function(request)
       {
         this.users = request.detail.response;

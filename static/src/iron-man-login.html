@@ -11,7 +11,7 @@
 <!-- <link rel="import" href="../bower_components/gold-email-input/gold-email-input.html"> -->
 <!-- <link rel="import" href="password-input.html"> -->
 
-<dom-module id="my-login">
+<dom-module id="iron-man-login">
   <template>
     <style>
       :host {
@@ -98,7 +98,16 @@
     <div class="card" name="login">
       <div style="text-align: center; font-size: 20px;">Login</div>
       <paper-input label="Username" id="username"></paper-input>
-      <paper-input style="padding: 0px;" label="Password" id="loginPassword"></paper-input>
+      <paper-input style="padding: 0px;" id="loginPassword"
+        label="Password"
+        type="password"
+        auto-validate
+        pattern="^([a-zA-Z0-9@*#!$]{6,32})$"
+        error-message="Password must be at least 6 characters"
+        maxlength="32"
+        required
+        value="{{value}}"
+        invalid="{{invalid}}"></paper-input>
       <div style="text-align:center;">
         <paper-button on-tap="_doLogin">Login</paper-button>
       </div>
@@ -120,7 +129,7 @@
   <script>
     Polymer({
 
-      is: 'my-login',
+      is: 'iron-man-login',
       behaviors: [
         Polymer.IronA11yKeysBehavior
       ],
@@ -141,6 +150,21 @@
         }
       },
       _doLogin: function() {
+        if(this.$.username.value == '' ||
+           this.$.loginPassword.value == '')
+           {
+             this.$.errorToast.text = 'Must enter a username and password';
+             this.$.errorToast.open();
+             return;
+           }
+
+        if(this.$.loginPassword.invalid)
+        {
+          this.$.errorToast.text = "Password must be at least 6 characters and can contain letters numbers and '@', '*', '#', '!', '$'";
+          this.$.errorToast.open();
+          return;
+        }
+
         var params = {username: this.$.username.value,
                       password: this.$.loginPassword.value};
         this.$.doLogin.params = params;
@@ -155,19 +179,19 @@
           else {
             this.$.username.value = "";
             this.$.loginPassword.value = "";
-            console.log(route);
-            this.set('route.path', 'view1');
+            console.log(this.route);
+            this.set('route.path', 'profile');
           }
         }
       },
       handleError: function(request, error) {
-        if(error.error.message.includes("500"))
+        if(request.detail.response.response.includes("500"))
         {
           this.$.errorToast.text = "The server had an unexpected error. Try refreshing the page.";
         }
         else
         {
-          this.$.errorToast.text = error.error.message;
+          this.$.errorToast.text = request.detail.response.response;
         }
         this.$.errorToast.open();
       }

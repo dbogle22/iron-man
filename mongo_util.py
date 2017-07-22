@@ -39,6 +39,16 @@ def get_leaderboard():
     with mongo() as db:
         return db.users.find({})
 
+def set_user_stats(username, running, biking, swimming):
+    with mongo() as db:
+        percent_complete = ((float(running) / TOTAL_RUNNING) * 100
+                               + (float(biking) / TOTAL_BIKING) * 100
+                               + (float(swimming) / TOTAL_SWIMMING) * 100) / 3
+        result = db.users.update_one({'username': username}, {'$set': {'running': running, 'biking': biking, 'swimming': swimming, 'percent_complete': percent_complete}})
+        if result.modified_count == 1:
+            return percent_complete
+        return -1
+
 def update_user_stats(user, **kwargs):
     with mongo() as db:
         print(kwargs)
@@ -66,6 +76,7 @@ def update_user_stats(user, **kwargs):
                                                                    }
                                                                  }
                             )
+        return new_running, new_biking, new_swimming, new_percent_complete
 
 def check_if_user_exists(userName):
     with mongo() as db:

@@ -15,7 +15,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="shared-styles.html">
 
-<dom-module id="my-view2">
+<dom-module id="iron-man-stats">
   <template>
     <style include="shared-styles">
       :host {
@@ -62,9 +62,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <div class="card">
       <h1>Enter your most recent workout</h1>
-      <paper-input id='running' style="max-width:300px" type="number" label="Running (in miles)"></paper-input>
-      <paper-input id='biking' style="max-width:300px" type="number" label="Biking (in miles)"></paper-input>
-      <paper-input id='swimming' style="max-width:300px" type="number" label="Swimming (in laps)"></paper-input>
+      <h3>The numbers entered here will be added to your current totals</h3>
+      <paper-input id='running' style="max-width:300px" type="number" label="Running (in miles). Max=26.2" max=26.2></paper-input>
+      <paper-input id='biking' style="max-width:300px" type="number" label="Biking (in miles). Max=112" max=112></paper-input>
+      <paper-input id='swimming' style="max-width:300px" type="number" label="Swimming (in 25m laps). Max=144" max=144></paper-input>
       <div style="display: flex; justify-content:center;"><paper-button style="align-self: center; border: 1px solid lightgrey;" on-tap="update">Submit</paper-button></div>
       <paper-toast></paper-toast>
     </div>
@@ -83,7 +84,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <script>
     Polymer({
-      is: 'my-view2',
+      is: 'iron-man-stats',
       update: function()
       {
         var run = 0;
@@ -125,6 +126,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         console.log("Updated stats");
         this.$.successToast.text = 'Successfully updated stats'
         this.$.successToast.open();
+        this.$.swimming.value = '';
+        this.$.biking.value = '';
+        this.$.running.value = '';
       },
       handleUpdateUserStatsError: function(request, error)
       {
