@@ -1,6 +1,8 @@
-# flask-with-polymer
+# iron-man
 
-I looked around for a while of a good example of how to set up a polymer app using flask. This is a simple example of how to set up a basic flask backend to serve polymer files. Once you clone this repo just navigate to the static folder and run 'bower install' to get everything that polymer needs. After that is done just set up flask by running export FLASK_APP=app.py. Then from the root directory which contains app.py run 'flask run'. Below is a list of commands you can run
+This is a simple web app for keeping track of your running, biking and simming throughout the month of the lazy man iron man. For those of you who don't know a lazy man iron man is an iron that you do over the course of a month instead of all in one day. This app is designed with keeping track of your stats throughout the month and allowing a little healthy competition by adding a leader board
+
+To get things started just clone this repo and follow the steps below
 
 ```
 $ cd static/
@@ -11,8 +13,7 @@ $ flask run
 ```
 
 Then navigate in your browser to http://localhost:5000.
-The polymer code is just the polymer starting code you can get by running
 
-`polymer init starter-kit`
+This code is based off of the polymer starter kit.
 
-using the polymer tools. More info on this starter kit can be found at the [polymer website](https://www.polymer-project.org/1.0/start/toolbox/set-up)
+More info on this starter kit can be found at the [polymer website](https://www.polymer-project.org/1.0/start/toolbox/set-up)
