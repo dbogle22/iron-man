@@ -22,13 +22,8 @@ app.logger.setLevel(logging.INFO)
 @login_manager.user_loader
 def user_loader(user_id):
     with mongo_util.mongo() as db:
-        app.logger.info('User id: %s' % user_id)
-
         user = db.users.find_one({'username': user_id})
-        app.logger.info(user)
-
         new_user = User(user['username'], user['password'])
-        app.logger.info(new_user)
         return new_user
 
 @app.route('/')
@@ -43,7 +38,6 @@ def forbidden():
 @login_required
 def get_user_stats():
     logged_in_user = mongo_util.get_user(current_user)
-    app.logger.info(logged_in_user)
     if logged_in_user:
         return bson.json_util.dumps(logged_in_user)
     else:
@@ -81,26 +75,8 @@ def get_leader_board():
         del i['_id']
     return bson.json_util.dumps(sorted(leader, key=lambda k: k['percent_complete'], reverse=True))
 
-@app.route('/doLogin', methods=['GET', 'POST'])
+@app.route('/doLogin', methods=['GET'])
 def do_login():
-    # if request.method == 'POST':
-    #     with mongo_util.mongo() as db:
-    #         body = request.get_json()
-    #         app.logger.debug(body)
-    #         body['password'] = generate_password_hash(body['password'])
-    #
-    #         # Make sure this actually worked
-    #         if not mongo_util.check_if_user_exists(body['userName']):
-    #             user = db.users.insert_one(body)
-    #             app.logger.debug(user.inserted_id)
-    #             if user.inserted_id:
-    #                 # Add User to database
-    #                 new_user = User(body['firstName'], body['lastName'], body['userName'], body['email'], body['password'])
-    #                 new_user.authenticated = True
-    #                 login_user(new_user)
-    #                 return redirect('/profile')
-    #         else:
-    #             return bson.json_util.dumps({'status': 500, 'response': 'Failed to add new user'}), 500
     if request.method == 'GET':
         with mongo_util.mongo() as db:
             username = request.args.get('username', '')
@@ -112,15 +88,12 @@ def do_login():
             # Verify credentials
             regx_search = re.compile(username, re.IGNORECASE)
             user = db.users.find_one({'username': regx_search})
-            app.logger.info(user)
             if user:
                 # User already exists so log them in
                 new_user = User(user['username'], user['password'])
                 if check_password_hash(user['password'], password):
-                    app.logger.info("New user: %s" % str(new_user))
                     if not login_user(new_user):
                         return bson.json_util.dumps({'status': 400, 'response': 'Login failed'}), 400
-                    app.logger.info("New user: %s" % str(new_user))
                     return bson.json_util.dumps({'status': 200, 'response': 'Successfully logged in'}), 200
                 else:
                     return bson.json_util.dumps({'status': 400, 'error': 'Incorrect username or password'}), 400
@@ -128,12 +101,10 @@ def do_login():
                 # A new user should be created
                 password = generate_password_hash(password)
                 user = db.users.insert_one({'username': username, 'password': password, 'running': 0.0, 'biking': 0.0, 'swimming': 0.0, 'percent_complete': 0.0})
-                app.logger.info(dir(user))
                 if user.inserted_id:
                     new_user = User(username, password)
                     new_user.authenticated = True
                     login_user(new_user)
-                    app.logger.info('Changing to profile page')
                     return bson.json_util.dumps({'status': 200, 'response': 'Successfully created a new account'})
                 else:
                     return bson.json_util.dumps({'status': 200, 'response': 'Could not create new account'}), 400
@@ -150,7 +121,6 @@ def is_logged_in():
 @login_required
 def do_logout():
     logout_user()
-    app.logger.info(current_user)
     return bson.json_util.dumps({'response': 'Successfully logged out'});
 
 @app.route('/<path:the_path>')

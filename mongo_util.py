@@ -2,9 +2,7 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import logging
 import re
-# import requests
 
-# FIXME: Make sure this is correct
 log = logging.Logger(__name__)
 log.setLevel(logging.INFO)
 TOTAL_RUNNING = 26.2
@@ -30,8 +28,6 @@ class mongo(object):
 
 def get_user(user):
     with mongo() as db:
-        log.info('Searching for user "%s"' % user.username)
-        print('Searching for user "%s"' % user.username)
         return db.users.find_one({'username': user.username})
 
 
@@ -51,7 +47,6 @@ def set_user_stats(username, running, biking, swimming):
 
 def update_user_stats(user, **kwargs):
     with mongo() as db:
-        print(kwargs)
         found_user = db.users.find_one({'username': user.username})
         new_running = float(kwargs.get('running', 0)) + float(found_user['running'])
         new_biking = float(kwargs.get('biking', 0)) + float(found_user['biking'])
