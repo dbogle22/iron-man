@@ -244,7 +244,11 @@
 
       handleGetUserStatsError: function(request, error)
       {
-
+        if(error.error.message.includes("401"))
+        {
+          this.$.errorToast.text = 'You must be signed in to see your stats';
+          this.$.errorToast.open();
+        }
       },
 
       handleUpdateUserStats: function(request)
