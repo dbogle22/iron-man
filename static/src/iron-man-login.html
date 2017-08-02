@@ -2,14 +2,10 @@
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
-<link rel="import" href="../bower_components/paper-input/paper-input-container.html">
-<!-- <link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html"> -->
 <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/iron-a11y-keys-behavior/iron-a11y-keys-behavior.html">
-<link rel="import" href="../bower_components/iron-input/iron-input.html">
-<!-- <link rel="import" href="../bower_components/gold-email-input/gold-email-input.html"> -->
-<!-- <link rel="import" href="password-input.html"> -->
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
 
 <dom-module id="iron-man-login">
   <template>
@@ -17,10 +13,6 @@
       :host {
         display: block;
         padding: 10px;
-      }
-      :root {
-        /* Label and underline color when the input is focused */
-        --paper-input-container-focus-color: var(--app-input-focus-color);
       }
       /* Big */
       @media screen and (min-width: 767px) {
@@ -33,7 +25,6 @@
           max-width: 500px;
           border-radius: 5px;
           background-color: #fff;
-/*          color: #757575;*/
         }
       }
 
@@ -45,10 +36,8 @@
           margin: 24px 4px 24px 4px;
           border-radius: 5px;
           background-color: #fff;
-          color: #757575;
         }
       }
-
       #errorToast {
         --paper-toast-background-color: #D32F2F;
         --paper-toast-color: white;
@@ -59,44 +48,21 @@
         --paper-toast-color: white;
         text-align: center;
       }
-      paper-tabs {
-        --paper-tabs-selection-bar-color: var(--app-primary-color);
-        --paper-tabs-content: {background-color: white}
-        background-color: var(--app-secondary-color);
-        color: var(--app-primary-color);
-      }
-      paper-checkbox {
-        align-self: center;
-
-        --paper-checkbox-checked-color: var(--app-primary-color);
-        --paper-checkbox-checked-ink-color: var(--app-primary-color);
-        --paper-checkbox-unchecked-color: var(--app-primary-color);
-        --paper-checkbox-unchecked-ink-color: var(--app-primary-color);
-/*        --paper-checkbox-label-color: var(--app-primary-color);*/
-        --paper-checkbox-label-spacing: 0;
-        --paper-checkbox-margin: 8px 16px 8px 0;
-/*        --paper-checkbox-vertical-align: top;*/
-      }
-      .tabs {
-        max-width: 500px;
-        margin: auto;
-      }
-      .toggle {
-        margin: 16px 16px 16px 0px;
-      }
-      .date {
-        font-family: inherit;
-        font-size:16px;
-      }
       input:focus {
         outline: none;
       }
     </style>
 
-    <app-route route="{{route}}" pattern="/:page" active="{{active}}" data="{{data}}" tail="{{tail}}"></app-route>
-
+    <app-route
+        route="{{route}}"
+        pattern="/:page"
+        data="{{routeData}}"
+        tail="{{subroute}}"></app-route>
     <div class="card" name="login">
       <div style="text-align: center; font-size: 20px;">Login</div>
+      <div style="text-align: center; font-size: 14px; opacity: 0.74; margin-top:4px;">
+        To create an account just enter a username and password
+      </div>
       <paper-input label="Username" id="username"></paper-input>
       <paper-input style="padding: 0px;" id="loginPassword"
         label="Password"
@@ -108,8 +74,17 @@
         required
         value="{{value}}"
         invalid="{{invalid}}"></paper-input>
+
       <div style="text-align:center;">
-        <paper-button on-tap="_doLogin">Login</paper-button>
+        <div style="text-align: center;" hidden$="[[showLogout]]">
+          <paper-button on-tap="_doLogin">Login</paper-button>
+        </div>
+        <div style="text-align: center;" hidden$="[[!showLogout]]">
+          <paper-button on-tap="_doLogout">Logout</paper-button>
+        </div>
+      </div>
+      <div hidden$="[[hideSpinner]]" style="text-align: center;">
+        <paper-spinner id="spinny"></paper-spinner>
       </div>
     </div>
 
@@ -119,6 +94,26 @@
       handle-as="json"
       on-response="handleDoLogin"
       on-error="handleError"
+      method="GET"
+      content-type="application/json"
+      debounce-duration="300"></iron-ajax>
+
+    <iron-ajax
+      id="isUserLoggedIn"
+      url="/isLoggedIn"
+      handle-as="json"
+      on-response="handleIsLoggedIn"
+      on-error="handleIsLoggedInError"
+      method="GET"
+      content-type="application/json"
+      debounce-duration="300"></iron-ajax>
+
+    <iron-ajax
+      id="logout"
+      url="/doLogout"
+      handle-as="json"
+      on-response="handleLogout"
+      on-error="handleLogoutError"
       method="GET"
       content-type="application/json"
       debounce-duration="300"></iron-ajax>
@@ -141,14 +136,31 @@
       keyBindings: {
         'enter': '_pressedEnter'
       },
+      observers: [
+        '_routePageChanged(routeData.page)'
+      ],
+
+      _routePageChanged: function(page) {
+        if(page == 'login') {
+          this.$.isUserLoggedIn.generateRequest();
+        }
+      },
+
       ready: function() {
         this.$.username.focus();
+        this.showLogout = false;
       },
+
       _pressedEnter: function(event) {
         if(event.detail.combo === 'enter') {
           this._doLogin();
         }
       },
+
+      _doLogout: function() {
+        this.$.logout.generateRequest();
+      },
+
       _doLogin: function() {
         if(this.$.username.value == '' ||
            this.$.loginPassword.value == '')
@@ -164,13 +176,15 @@
           this.$.errorToast.open();
           return;
         }
-
+        this.$.spinny.active = true;
         var params = {username: this.$.username.value,
                       password: this.$.loginPassword.value};
         this.$.doLogin.params = params;
         this.$.doLogin.generateRequest();
       },
+
       handleDoLogin: function(request) {
+        this.$.spinny.active = false;
         if(request.detail.response) {
           if(request.detail.response.response.includes("Incorrect")) {
             this.$.errorToast.text = request.detail.response.response;
@@ -179,21 +193,35 @@
           else {
             this.$.username.value = "";
             this.$.loginPassword.value = "";
-            console.log(this.route);
+            this.$.loginPassword.invalid = false;
             this.set('route.path', 'profile');
           }
         }
       },
+
       handleError: function(request, error) {
-        if(request.detail.response.response.includes("500"))
-        {
-          this.$.errorToast.text = "The server had an unexpected error. Try refreshing the page.";
-        }
-        else
-        {
-          this.$.errorToast.text = request.detail.response.response;
-        }
+        this.$.spinny.active = false;
+        this.$.errorToast.text = request.detail.request.xhr.response.error;
         this.$.errorToast.open();
+      },
+
+      handleIsLoggedIn: function(request) {
+        this.showLogout = request.detail.response.isLoggedIn;
+      },
+
+      handleIsLoggedInError: function(request, error) {
+        console.log("Check logged in user failed");
+      },
+
+      handleLogout: function(request) {
+        console.log(request.detail.repsonse);
+        this.$.successToast.text = "Successfully logged out";
+        this.$.successToast.open();
+        this.showLogout = false;
+      },
+
+      handleLogoutError: function(request) {
+        console.log("Logout failed");
       }
     });
   </script>

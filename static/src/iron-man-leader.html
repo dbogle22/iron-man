@@ -38,6 +38,10 @@
         .header {
           display: flex;
         }
+        .cell-xsmall {
+          width:40px;
+          margin: 8px;
+        }
         .cell-small {
           width: 100px;
           margin: 8px;
@@ -47,8 +51,11 @@
           margin: 8px;
         }
         .cell-large {
-          width: 150px;
+          width: 200px;
           margin: 8px;
+        }
+        .title {
+          font-size: 22px;
         }
       }
 
@@ -56,19 +63,21 @@
       @media screen and (max-width: 766px) {
         .card {
           box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
-          padding: 24px;
-          margin: 24px 4px 24px 4px;
+          margin: 16px 4px 16px 4px;
           border-radius: 5px;
           background-color: #fff;
           color: #757575;
+          font-size: 9px;
         }
         .row {
           display:flex;
-          font-size: 11px;
         }
         .header {
           display: flex;
-          font-size: 12px;
+        }
+        .cell-xsmall {
+          width: 40px;
+          margin: 4px;
         }
         .cell-small {
           width: 100px;
@@ -79,8 +88,11 @@
           margin: 4px;
         }
         .cell-large {
-          width: 150px;
+          width: 200px;
           margin: 4px;
+        }
+        .title {
+          font-size: 16px;
         }
       }
     </style>
@@ -90,9 +102,9 @@
         data="{{routeData}}"
         tail="{{subroute}}"></app-route>
     <div class="card">
-      <h1>Leader board</h1>
+      <h1 class="title">Leader board</h1>
       <div class="header">
-        <div class="cell-small">Rank</div>
+        <div class="cell-xsmall">Rank</div>
         <div class="cell-large">Name</div>
         <div class="cell-small">Running</div>
         <div class="cell-small">Swimming</div>
@@ -106,7 +118,7 @@
       <template>
         <div>
           <div class="row">
-            <div class="cell-small">[[_add_one(index)]]</div>
+            <div class="cell-xsmall">[[_add_one(index)]]</div>
             <div class="cell-large">[[user.username]]</div>
             <div class="cell-small">[[user.running]]</div>
             <div class="cell-small">[[user.swimming]]</div>

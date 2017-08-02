@@ -123,7 +123,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       handleUpdateUserStats: function(request)
       {
-        console.log("Updated stats");
         this.$.successToast.text = 'Successfully updated stats'
         this.$.successToast.open();
         this.$.swimming.value = '';
@@ -132,8 +131,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       handleUpdateUserStatsError: function(request, error)
       {
-        this.$.errorToast.text = request.detail.request.xhr.response.error;
-        this.$.errorToast.open();
+        if(request.detail.request.xhr.status == 401) {
+          this.$.errorToast.text = 'You must be logged in in order to submit';
+          this.$.errorToast.open();
+          return;
+        }
+        else {
+          this.$.errorToast.text = request.detail.request.xhr.response.error;
+          this.$.errorToast.open();
+        }
       }
     });
   </script>

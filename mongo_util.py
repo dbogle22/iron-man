@@ -9,7 +9,7 @@ log = logging.Logger(__name__)
 log.setLevel(logging.INFO)
 TOTAL_RUNNING = 26.2
 TOTAL_BIKING = 112.0
-TOTAL_SWIMMING = 2.4
+TOTAL_SWIMMING = 144.0
 
 class mongo(object):
     """

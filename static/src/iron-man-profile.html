@@ -3,6 +3,7 @@
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/paper-progress/paper-progress.html">
 <link rel="import" href="shared-styles.html" />
 
 <dom-module id="iron-man-profile">
@@ -26,6 +27,12 @@
           background-color: #fff;
 /*          color: #757575;*/
         }
+        paper-progress {
+          --paper-progress-transition-duration: 0.5s;
+          --paper-progress-transition-timing-function: ease;
+          --paper-progress-transition-transition-delay: 0s;
+          width: 100%;
+        }
       }
 
       /* Small */
@@ -36,8 +43,25 @@
           margin: 24px 4px 24px 4px;
           border-radius: 5px;
           background-color: #fff;
-          color: #757575;
         }
+        paper-progress {
+          --paper-progress-transition-duration: 0.5s;
+          --paper-progress-transition-timing-function: ease;
+          --paper-progress-transition-transition-delay: 0s;
+          width: 100%;
+        }
+      }
+      paper-progress.blue {
+        --paper-progress-active-color: var(--paper-light-blue-500);
+        --paper-progress-secondary-color: var(--paper-light-blue-100);
+      }
+      paper-progress.red {
+        --paper-progress-active-color: var(--paper-red-500);
+        --paper-progress-secondary-color: var(--paper-red-100);
+      }
+      paper-progress.green {
+        --paper-progress-active-color: var(--paper-light-green-500);
+        --paper-progress-secondary-color: var(--paper-light-green-100);
       }
       #errorToast {
         --paper-toast-background-color: #D32F2F;
@@ -63,16 +87,19 @@
         <div name="display" class="card">
           <h1>Your stats</h1>
           <div>
-            <span>Running: </span>
-            [[user.running]]
+            <span>Running: [[user.running]] out of 26.2 miles</span>
+            <paper-progress value="[[user.running]]" class="green transiting"></paper-progress>
+            &nbsp;
           </div>
           <div>
-            <span>Biking:</span>
-            [[user.biking]]
+            <span>Biking: [[user.biking]] out of 112 miles</span>
+            <paper-progress value="[[user.biking]]" class="red transiting"></paper-progress>
+            &nbsp;
           </div>
           <div>
-            <span>Swimming:</span>
-              [[user.swimming]]
+            <span>Swimming: [[user.swimming]] out of 144 (25 meter laps)</span>
+            <paper-progress value="[[user.swimming]]" class="blue transiting"></paper-progress>
+            &nbsp;
           </div>
           <div>
             <span><b>Percent completed: [[_format(user.percent_complete)]]%</b></span>
@@ -213,10 +240,6 @@
         {
           this.user = request.detail.response
         }
-        else
-        {
-          console.log(request.detail);
-        }
       },
 
       handleGetUserStatsError: function(request, error)
@@ -226,7 +249,6 @@
 
       handleUpdateUserStats: function(request)
       {
-        console.log("Updated stats");
         this.$.successToast.text = 'Successfully updated stats'
         this.$.successToast.open();
         this.set('user.swimming', request.detail.response.swimming);

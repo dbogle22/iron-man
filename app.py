@@ -31,12 +31,7 @@ def user_loader(user_id):
         app.logger.info(new_user)
         return new_user
 
-@login_manager.unauthorized_handler
-def unauthorized_handler():
-    return redirect(url_for('forbidden', _scheme='https', _external=True))
-
 @app.route('/')
-@login_required
 def hello():
     return app.send_static_file('index.html')
 
@@ -128,7 +123,7 @@ def do_login():
                     app.logger.info("New user: %s" % str(new_user))
                     return bson.json_util.dumps({'status': 200, 'response': 'Successfully logged in'}), 200
                 else:
-                    return bson.json_util.dumps({'status': 400, 'response': 'Incorrect username or password'}), 400
+                    return bson.json_util.dumps({'status': 400, 'error': 'Incorrect username or password'}), 400
             else:
                 # A new user should be created
                 password = generate_password_hash(password)
@@ -144,9 +139,23 @@ def do_login():
                     return bson.json_util.dumps({'status': 200, 'response': 'Could not create new account'}), 400
 
 
+@app.route('/isLoggedIn')
+def is_logged_in():
+    if current_user.is_authenticated:
+        return bson.json_util.dumps({'isLoggedIn': True})
+    else:
+        return bson.json_util.dumps({'isLoggedIn': False})
+
+@app.route("/doLogout")
+@login_required
+def do_logout():
+    logout_user()
+    app.logger.info(current_user)
+    return bson.json_util.dumps({'response': 'Successfully logged out'});
+
 @app.route('/<path:the_path>')
 def all_other_routes(the_path):
     return app.send_static_file('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
