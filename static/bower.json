@@ -20,12 +20,14 @@
     "gold-email-input": "PolymerElements/gold-email-input#^1.0.9",
     "iron-a11y-keys-behavior": "PolymerElements/iron-a11y-keys-behavior#^2.0.1",
     "paper-button": "PolymerElements/paper-button#^2.0.0",
-    "paper-checkbox": "PolymerElements/paper-checkbox#^2.0.1",
+    "paper-checkbox": "PolymerElements/paper-checkbox#~2.0.1",
     "paper-toast": "PolymerElements/paper-toast#^2.0.0",
     "iron-input": "PolymerElements/iron-input#^1.0.0",
     "iron-list": "PolymerElements/iron-list#^2.0.4",
     "paper-spinner": "PolymerElements/paper-spinner#^2.0.0",
-    "paper-progress": "PolymerElements/paper-progress#~2.0.1"
+    "paper-progress": "PolymerElements/paper-progress#~2.0.1",
+    "paper-tabs": "PolymerElements/paper-tabs#~2.0.0",
+    "paper-dialog": "PolymerElements/paper-dialog#~2.0.0"
   },
   "devDependencies": {
     "web-component-tester": "^4.0.0"

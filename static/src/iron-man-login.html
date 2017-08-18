@@ -6,6 +6,8 @@
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/iron-a11y-keys-behavior/iron-a11y-keys-behavior.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../bower_components/paper-tabs/paper-tabs.html">
+<link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
 
 <dom-module id="iron-man-login">
   <template>
@@ -58,35 +60,67 @@
         pattern="/:page"
         data="{{routeData}}"
         tail="{{subroute}}"></app-route>
-    <div class="card" name="login">
-      <div style="text-align: center; font-size: 20px;">Login</div>
-      <div style="text-align: center; font-size: 14px; opacity: 0.74; margin-top:4px;">
-        To create an account just enter a username and password
-      </div>
-      <paper-input label="Username" id="username"></paper-input>
-      <paper-input style="padding: 0px;" id="loginPassword"
-        label="Password"
-        type="password"
-        auto-validate
-        pattern="^([a-zA-Z0-9@*#!$]{6,32})$"
-        error-message="Password must be at least 6 characters"
-        maxlength="32"
-        required
-        value="{{value}}"
-        invalid="{{invalid}}"></paper-input>
 
-      <div style="text-align:center;">
-        <div style="text-align: center;" hidden$="[[showLogout]]">
-          <paper-button on-tap="_doLogin">Login</paper-button>
+    <iron-pages selected="{{selectedView}}">
+      <div class="card" name="login">
+        <div style="text-align: center; font-size: 20px;">Login</div>
+        <div style="text-align: center; font-size: 14px; opacity: 0.74; margin-top:4px;">
+          Enter your username and password to sign in or sign up if you don't have an account
         </div>
-        <div style="text-align: center;" hidden$="[[!showLogout]]">
-          <paper-button on-tap="_doLogout">Logout</paper-button>
+        <paper-input label="Username" id="username"></paper-input>
+        <paper-input style="padding: 0px;" id="loginPassword"
+          label="Password"
+          type="password"
+          auto-validate
+          pattern="^([a-zA-Z0-9@*#!$]{6,32})$"
+          error-message="Password must be at least 6 characters"
+          maxlength="32"
+          required
+          invalid="{{invalid}}"></paper-input>
+
+        <div style="text-align:center;">
+          <div hidden$="[[showLogout]]">
+            <div style="text-align: center;">
+              <paper-button on-tap="_doLogin">Login</paper-button>
+              <paper-button on-tap="_goToSignUp">Sign up</paper-button>
+            </div>
+            <paper-checkbox id="rememberMe" checked>Remember me</paper-checkbox>
+          </div>
+          <div style="text-align: center;" hidden$="[[!showLogout]]">
+            <paper-button on-tap="_doLogout">Logout</paper-button>
+          </div>
+        </div>
+        <div hidden$="[[hideSpinner]]" style="text-align: center;">
+          <paper-spinner id="spinny"></paper-spinner>
         </div>
       </div>
-      <div hidden$="[[hideSpinner]]" style="text-align: center;">
-        <paper-spinner id="spinny"></paper-spinner>
+      <div class="card" name="signup">
+        <div style="text-align: center; font-size: 20px;">Sign up</div>
+        <div style="text-align: center; font-size: 14px; opacity: 0.74; margin-top:4px;">
+          To sign up for an account simply enter your info and hit submit
+        </div>
+        <paper-input label="First name" id="firstName"></paper-input>
+        <paper-input label="Last name" id="lastName"></paper-input>
+        <paper-input label="Username" id="usernameSignup"></paper-input>
+        <paper-input style="padding: 0px;" id="loginPasswordSignup"
+          label="Password"
+          type="password"
+          auto-validate
+          pattern="^([a-zA-Z0-9@*#!$]{6,32})$"
+          error-message="Password must be at least 6 characters"
+          maxlength="32"
+          required
+          invalid="{{invalid}}"></paper-input>
+
+        <div style="text-align:center;">
+          <paper-button on-tap="_doSignUp">Sign up</paper-button>
+          <paper-button on-tap="_goToLogin">Back to login</paper-button>
+        </div>
+        <div hidden$="[[hideSpinnerSignup]]" style="text-align: center;">
+          <paper-spinner id="spinnySignup"></paper-spinner>
+        </div>
       </div>
-    </div>
+    </iron-pages>
 
     <iron-ajax
       id="doLogin"
@@ -95,6 +129,16 @@
       on-response="handleDoLogin"
       on-error="handleError"
       method="GET"
+      content-type="application/json"
+      debounce-duration="300"></iron-ajax>
+
+    <iron-ajax
+      id="doSignUp"
+      url="/doLogin"
+      handle-as="json"
+      on-response="handleDoSignUp"
+      on-error="handleDoSignUpError"
+      method="POST"
       content-type="application/json"
       debounce-duration="300"></iron-ajax>
 
@@ -131,6 +175,10 @@
       properties: {
         route: {
           type: Object
+        },
+        selectedView: {
+          type: Number,
+          value: 0
         }
       },
       keyBindings: {
@@ -153,8 +201,21 @@
 
       _pressedEnter: function(event) {
         if(event.detail.combo === 'enter') {
-          this._doLogin();
+          if(this.selectedView == 0) {
+            this._doLogin();
+          }
+          else {
+            this._doSignUp();
+          }
         }
+      },
+
+      _goToLogin: function() {
+        this.selectedView = 0;
+      },
+
+      _goToSignUp: function() {
+        this.selectedView = 1;
       },
 
       _doLogout: function() {
@@ -172,15 +233,62 @@
 
         if(this.$.loginPassword.invalid)
         {
-          this.$.errorToast.text = "Password must be at least 6 characters and can contain letters numbers and '@', '*', '#', '!', '$'";
+          this.$.errorToast.text = "Password must be at least 6 characters and can contain letters, numbers, and '@', '*', '#', '!', '$'";
           this.$.errorToast.open();
           return;
         }
         this.$.spinny.active = true;
         var params = {username: this.$.username.value,
-                      password: this.$.loginPassword.value};
+                      password: this.$.loginPassword.value,
+                      remember: this.$.rememberMe.checked};
         this.$.doLogin.params = params;
         this.$.doLogin.generateRequest();
+      },
+
+      _doSignUp: function() {
+        if(this.$.usernameSignup.value == '' ||
+           this.$.loginPasswordSignup.value == '')
+           {
+             this.$.errorToast.text = 'Must enter a username and password';
+             this.$.errorToast.open();
+             return;
+           }
+
+        if(this.$.loginPasswordSignup.invalid)
+        {
+          this.$.errorToast.text = "Password must be at least 6 characters and can contain letters, numbers, and '@', '*', '#', '!', '$'";
+          this.$.errorToast.open();
+          return;
+        }
+        this.$.spinnySignup.active = true;
+        var body = {'firstName': this.$.firstName.value,
+                    'lastName': this.$.lastName.value,
+                    'username': this.$.usernameSignup.value,
+                    'password': this.$.loginPasswordSignup.value};
+        this.$.doSignUp.body = body;
+        this.$.doSignUp.generateRequest();
+      },
+
+      handleDoSignUp: function(request) {
+        this.$.spinnySignup.active = false;
+        this._clearSignUp();
+        this._clearLogin();
+        this.selectedView = 0;
+        this.set('route.path', 'profile');
+      },
+
+      handleDoSignUpError: function(request, error) {
+        this.$.spinnySignup.active = false;
+        if (request.detail.request.xhr.response.status == 400) {
+          this.$.errorToast.text = request.detail.request.xhr.response.error;
+          this.$.errorToast.open();
+          return;
+        }
+        else {
+          this.$.errorToast.text = 'An error occured. Could not create a new account';
+          this.$.errorToast.open();
+          return;
+        }
       },
 
       handleDoLogin: function(request) {
@@ -191,9 +299,8 @@
             this.$.errorToast.open();
           }
           else {
-            this.$.username.value = "";
-            this.$.loginPassword.value = "";
-            this.$.loginPassword.invalid = false;
+            this._clearLogin();
+            this._clearSignUp();
             this.set('route.path', 'profile');
           }
         }
@@ -222,6 +329,20 @@
 
       handleLogoutError: function(request) {
         console.log("Logout failed");
+      },
+
+      _clearLogin: function() {
+        this.$.username.value = "";
+        this.$.loginPassword.value = "";
+        this.$.loginPassword.invalid = false;
+      },
+
+      _clearSignUp: function() {
+        this.$.firstName.value = "";
+        this.$.lastName.value = "";
+        this.$.usernameSignup.value = "";
+        this.$.loginPasswordSignup.value = "";
+        this.$.loginPasswordSignup.invalid = false;
       }
     });
   </script>

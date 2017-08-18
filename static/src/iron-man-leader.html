@@ -120,9 +120,9 @@
           <div class="row">
             <div class="cell-xsmall">[[_add_one(index)]]</div>
             <div class="cell-large">[[user.username]]</div>
-            <div class="cell-small">[[user.running]]</div>
-            <div class="cell-small">[[user.swimming]]</div>
-            <div class="cell-small">[[user.biking]]</div>
+            <div class="cell-small">[[_format(user.running)]]</div>
+            <div class="cell-small">[[_format(user.swimming)]]</div>
+            <div class="cell-small">[[_format(user.biking)]]</div>
             <div class="cell-medium">[[_format(user.percent_complete)]]%</div>
           </div>
         </div>
@@ -157,7 +157,7 @@
 
       _format: function(num)
       {
-        return num.toFixed(2);
+        return parseFloat(num).toFixed(2);
       },
 
       _routePageChanged: function(page) {

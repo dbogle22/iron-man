@@ -2,12 +2,14 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import logging
 import re
+# import requests
 
+# FIXME: Make sure this is correct
 log = logging.Logger(__name__)
 log.setLevel(logging.INFO)
 TOTAL_RUNNING = 26.2
 TOTAL_BIKING = 112.0
-TOTAL_SWIMMING = 144.0
+TOTAL_SWIMMING = 152.0
 
 class mongo(object):
     """
@@ -28,6 +30,8 @@ class mongo(object):
 
 def get_user(user):
     with mongo() as db:
+        log.info('Searching for user "%s"' % user.username)
+        print('Searching for user "%s"' % user.username)
         return db.users.find_one({'username': user.username})
 
 
@@ -36,10 +40,12 @@ def get_leaderboard():
         return db.users.find({})
 
 def set_user_stats(username, running, biking, swimming):
+    if any((running > TOTAL_RUNNING) or (biking > TOTAL_BIKING) or (swimming > TOTAL_SWIMMING)):
+        return -1
     with mongo() as db:
         percent_complete = ((float(running) / TOTAL_RUNNING) * 100
-                               + (float(biking) / TOTAL_BIKING) * 100
-                               + (float(swimming) / TOTAL_SWIMMING) * 100) / 3
+                          + (float(biking) / TOTAL_BIKING) * 100
+                          + (float(swimming) / TOTAL_SWIMMING) * 100) / 3
         result = db.users.update_one({'username': username}, {'$set': {'running': running, 'biking': biking, 'swimming': swimming, 'percent_complete': percent_complete}})
         if result.modified_count == 1:
             return percent_complete
@@ -47,6 +53,7 @@ def set_user_stats(username, running, biking, swimming):
 
 def update_user_stats(user, **kwargs):
     with mongo() as db:
+        print(kwargs)
         found_user = db.users.find_one({'username': user.username})
         new_running = float(kwargs.get('running', 0)) + float(found_user['running'])
         new_biking = float(kwargs.get('biking', 0)) + float(found_user['biking'])

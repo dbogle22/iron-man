@@ -4,6 +4,7 @@
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="shared-styles.html" />
 
 <dom-module id="iron-man-profile">
@@ -88,17 +89,17 @@
           <h1>Your stats</h1>
           <div>
             <span>Running: [[user.running]] out of 26.2 miles</span>
-            <paper-progress value="[[user.running]]" class="green transiting"></paper-progress>
+            <paper-progress value="[[_normalize(user.running, 26.2)]]" class="green transiting"></paper-progress>
             &nbsp;
           </div>
           <div>
             <span>Biking: [[user.biking]] out of 112 miles</span>
-            <paper-progress value="[[user.biking]]" class="red transiting"></paper-progress>
+            <paper-progress value="[[_normalize(user.biking, 112)]]" class="red transiting"></paper-progress>
             &nbsp;
           </div>
           <div>
-            <span>Swimming: [[user.swimming]] out of 144 (25 meter laps)</span>
-            <paper-progress value="[[user.swimming]]" class="blue transiting"></paper-progress>
+            <span>Swimming: [[user.swimming]] out of 152 (25 meter laps)</span>
+            <paper-progress value="[[_normalize(user.swimming, 152)]]" class="blue transiting"></paper-progress>
             &nbsp;
           </div>
           <div>
@@ -123,8 +124,22 @@
             <paper-button style="align-self: center; border: 1px solid lightgrey;" on-tap="_submitEdit">Submit</paper-button>
             <paper-button style="align-self: center; border: 1px solid lightgrey;" on-tap="_display">Cancel</paper-button>
           </div>
+          <div>
+            <paper-button style="background-color: #F44336; color: white; margin-top: 32px;" on-tap="_openModal">Delete profile</paper-button>
+          </div>
         </div>
     </iron-pages>
+
+    <paper-dialog id="deleteModal">
+      <h2>Delete profile</h2>
+      <p>
+        Are you sure you want to delete your profile? This action cannot be undone and your stats cannot be recovered.
+      </p>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm autofocus on-tap="_deleteProfile">Delete</paper-button>
+      </div>
+    </paper-dialog>
 
     <iron-ajax
       id="getUserStats"
@@ -136,6 +151,7 @@
       content-type="application/json"
       auto
       debounce-duration="300"></iron-ajax>
+
     <iron-ajax
         id="setUserStats"
         url="/setUserStats"
@@ -145,6 +161,17 @@
         method="GET"
         content-type="application/json"
         debounce-duration="300"></iron-ajax>
+
+    <iron-ajax
+        id="deleteProfile"
+        url="/deleteProfile"
+        handle-as="json"
+        on-response="handleDeleteProfile"
+        on-error="handleDeleteProfileError"
+        method="GET"
+        content-type="application/json"
+        debounce-duration="300"></iron-ajax>
+
     <paper-toast id="errorToast" class="fit-bottom"></paper-toast>
     <paper-toast id="successToast" class="fit-bottom"></paper-toast>
   </template>
@@ -166,6 +193,24 @@
       observers: [
         '_routePageChanged(routeData.page)'
       ],
+
+      _openModal: function()
+      {
+        this.$.deleteModal.open();
+      },
+
+      _normalize: function(value, factor)
+      {
+        if (factor > 0)
+        {
+          var val = parseFloat(value).toFixed(2) / factor;
+          return val*100;
+        }
+        else
+        {
+            return value;
+        }
+      },
 
       _format: function(num)
       {
@@ -198,33 +243,43 @@
         this.selected = 'display';
       },
 
+      _deleteProfile: function()
+      {
+        // TODO: Submit delete profile ajax
+        this.$.deleteProfile.generateRequest();
+      },
+
       _submitEdit: function() {
-        var run = 0;
-        var bike = 0;
-        var swim = 0;
+        var run = isNaN(parseFloat(this.$.running.value)) ? 0 : parseFloat(this.$.running.value).toFixed(2);
+        var bike = isNaN(parseFloat(this.$.biking.value)) ? 0 : parseFloat(this.$.biking.value).toFixed(2);
+        var swim = isNaN(parseFloat(this.$.swimming.value)) ? 0 : parseFloat(this.$.swimming.value).toFixed(2);
 
-        if(this.$.running.value == '' &&
-           this.$.biking.value == '' &&
-           this.$.swimming.value == '')
-           {
-             this.$.errorToast.text = 'Must enter at least one field in order to submit'
-             this.$.errorToast.open();
-             return;
-           }
-
-        if(this.$.running.value != '')
+        if(run == 0.00 && bike == 0.00 && swim == 0.00)
         {
-          run = this.$.running.value;
+          this.$.errorToast.text = 'Must enter at least one field in order to submit'
+          this.$.errorToast.open();
+          return;
         }
 
-        if (this.$.biking.value != '')
+        if(run < 0.00 || run > 26.20)
         {
-          bike = this.$.biking.value;
+          this.$.errorToast.text = 'Running value must be between 0 and 26.2';
+          this.$.errorToast.open();
+          return;
         }
 
-        if(this.$.swimming.value != '')
+        if (bike < 0.00 || bike > 112.00)
         {
-          swim = this.$.swimming.value;
+          this.$.errorToast.text = 'Biking value must be between 0 and 112';
+          this.$.errorToast.open();
+          return;
+        }
+
+        if(swim < 0.00 || swim > 152.00)
+        {
+          this.$.errorToast.text = 'Swimming value must be between 0 and 152';
+          this.$.errorToast.open();
+          return;
         }
 
         var params = {running: run,
@@ -265,6 +320,27 @@
       {
         this.$.errorToast.text = request.detail.request.xhr.response.error;
         this.$.errorToast.open();
+      },
+
+      handleDeleteProfile: function(request)
+      {
+        this.$.successToast.text = 'Successfully deleted profile';
+        this.$.successToast.open();
+        this.set('route.path', 'login');
+      },
+
+      handleDeleteProfileError: function(request, error)
+      {
+        if(error.error.message.includes("401"))
+        {
+          this.$.errorToast.text = 'Your current session is old. For security reasons you must first logout and log back in, in order to delete your profile';
+          this.$.errorToast.open();
+        }
+        else
+        {
+          this.$.errorToast.text = 'There was an error while trying to delete your profile. Try again later';
+          this.$.errorToast.open();
+        }
       }
     });
   </script>
