@@ -188,8 +188,12 @@
         '_routePageChanged(routeData.page)'
       ],
 
+      ready: function() {
+        this.$.isUserLoggedIn.generateRequest();
+      },
+
       _routePageChanged: function(page) {
-        if(page == 'login') {
+        if(page == 'login' || page == '') {
           this.$.isUserLoggedIn.generateRequest();
         }
       },
